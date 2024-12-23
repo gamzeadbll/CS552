@@ -7,6 +7,7 @@ from openpyxl import Workbook
 import os
 from scrapers.instructors_page import fetch_instructors
 from utils.helpers import save_instructors_to_excel
+import locale
 
 
 def normalize_turkish(text):
@@ -49,6 +50,12 @@ def fetch_university_pages(base_url, driver_path):
                     normalized_city = normalize_turkish(city)
 
                     if university_name in processed_universities:
+                        continue
+
+                    normalized_start = normalize_turkish("NUH NACİ YAZGAN ÜNİVERSİTESİ")
+                    normalized_name = normalize_turkish(university_name)
+                    if locale.strcoll(normalized_name, normalized_start) < 0:
+                        print(f"Skipping {university_name} (comes before {normalized_start})")
                         continue
 
                     if not normalized_city == "istanbul":

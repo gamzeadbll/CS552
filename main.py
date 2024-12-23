@@ -6,7 +6,7 @@ def main():
     DRIVER_PATH = "/Users/egeoruc/Downloads/chromedriver-mac-arm64/chromedriver"
 
     try:
-        universities = fetch_university_pages(BASE_URL, DRIVER_PATH, start_from="MUNZUR ÜNİVERSİTESİ")
+        universities = fetch_university_pages(BASE_URL, DRIVER_PATH)
     except Exception as e:
         print(f"An error occurred: {e}")
 
