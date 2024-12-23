@@ -3,8 +3,10 @@ from scholarly import scholarly
 import time
 
 
-# Replace 'your_api_key' with your actual SerpAPI key
+# Replace 'your_api_key' with your actual SerpAPI key - not used in this code
 API_KEY = "your_api_key"
+
+
 
 def fetch_author_data(author_name):
     try:
@@ -137,55 +139,85 @@ def get_articles(author_name):
         print(f"Error fetching data for {author_name}: {e}")
         return None, None
 
-def get_author_data(author_name, api_key):
-    params = {
-        "engine": "google_scholar_profiles",
-        "mauthors": author_name,
-        "api_key": api_key
-    }
-    search = GoogleSearch(params)
-    results = search.get_dict()
-
-    # Check if author profiles are found
-    if "profiles" in results:
-        author_profile = results["profiles"][0]  # Take the first matching profile
-        author_info = {
-            "Name": author_profile.get("name", ""),
-            "Affiliation": author_profile.get("affiliations", ""),
-            "Interests": ", ".join(author_profile.get("interests", [])),
-            "Cited By": author_profile.get("cited_by", {}).get("value", 0),
-            "h-index": author_profile.get("h_index", {}).get("value", 0),
-            "h-index (5y)": author_profile.get("h_index", {}).get("five_year_value", 0),
-            "i10-index": author_profile.get("i10_index", {}).get("value", 0),
-            "i10-index (5y)": author_profile.get("i10_index", {}).get("five_year_value", 0),
-            "Email Domain": author_profile.get("email", ""),
-            "Scholar ID": author_profile.get("author_id", ""),
-            "Profile URL": author_profile.get("link", ""),
-            "Thumbnail": author_profile.get("thumbnail", "")
+def get_author_data(author_name):
+    try:
+        params = {
+            "engine": "google_scholar_profiles",
+            "mauthors": author_name
         }
-        return author_info
-    else:
-        print(f"No profiles found for {author_name}")
-        return None
+        search = GoogleSearch(params)
+        results = search.get_dict()
+    
+        # Check if author profiles are found
+        if "profiles" in results:
+            author_profile = results["profiles"][0]  # Take the first matching profile
+            author_info = {
+                "Name": author_profile.get("name", ""),
+                "Affiliation": author_profile.get("affiliations", ""),
+                "Interests": ", ".join(author_profile.get("interests", [])),
+                "Cited By": author_profile.get("cited_by", {}).get("value", 0),
+                "h-index": author_profile.get("h_index", {}).get("value", 0),
+                "h-index (5y)": author_profile.get("h_index", {}).get("five_year_value", 0),
+                "i10-index": author_profile.get("i10_index", {}).get("value", 0),
+                "i10-index (5y)": author_profile.get("i10_index", {}).get("five_year_value", 0),
+                "Email Domain": author_profile.get("email", ""),
+                "Scholar ID": author_profile.get("author_id", ""),
+                "Profile URL": author_profile.get("link", ""),
+                "Thumbnail": author_profile.get("thumbnail", "")
+            }
+            return author_info
+        else:
+            print(f"No profiles found for {author_name}")
+            return None
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        
+
+authors_file_path = "/Users/gamzeadibelli/OZU DS/CS552/Project/data/authors_final.xlsx"
+
+authors_data = pd.ExcelFile(authors_file_path)
+authors_sheet_data = pd.read_excel(authors_file_path, sheet_name='Sheet1')
+
+# Extract unique authors from the "Instructor Name" column
+authors_list = authors_sheet_data['Instructor Name'].drop_duplicates().tolist()
 
 
-authors = ["Olcay Taner Yıldız", "Milad Elyasi"]
+authors = ["Olcay Taner Yıldız", "Milad Elyasi","SELAHATTİN KURU"]
 author_rows = []
 all_articles = []
+failed_authors = []  # Track authors with errors
 
-for name in authors:
-    time.sleep(5)
-    print("waited for 5 seconds...")
-    print(name)
-    author_row  = get_author_details(name)
-    author_rows.append(author_row)
+# Define function to handle retries and errors
+def get_author_data_safely(author_name):
+    try:
+        print(f"Fetching data for {author_name}...")
+        author_row = get_author_details(author_name)
+        if author_row:
+            return author_row
+        else:
+            raise ValueError("No data returned for author")
+    except Exception as e:
+        print(f"Error processing {author_name}: {e}")
+        failed_authors.append({"Author Name": author_name, "Error": str(e)})
+        time.sleep(1)
+        return None
 
+# Process authors
+for name in authors_list:
+    print("Waiting for 4 seconds...")
+    time.sleep(4)
+    print(f"Proceeding with {name}...")
+    author_row = get_author_data_safely(name)
+    if author_row:
+        author_rows.append(author_row)
+
+# Create DataFrames
 author_df = pd.DataFrame(author_rows)
-#article_df = pd.DataFrame(all_articles)
+failed_df = pd.DataFrame(failed_authors)
 
 # Write to Excel
-with pd.ExcelWriter("scholar_data.xlsx") as writer:
+with pd.ExcelWriter("scholarly_data_istanbul.xlsx") as writer:
     author_df.to_excel(writer, sheet_name="Authors", index=False)
-    #article_df.to_excel(writer, sheet_name="Articles", index=False)
+    failed_df.to_excel(writer, sheet_name="Failed Authors", index=False)
 
-print("Data written to scholar_data.xlsx")
+print("Data written to scholarly_data_istanbul.xlsx")
