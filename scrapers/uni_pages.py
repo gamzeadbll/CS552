@@ -51,7 +51,7 @@ def fetch_university_pages(base_url, driver_path):
                     if university_name in processed_universities:
                         continue
 
-                    if normalized_city == "istanbul":
+                    if not normalized_city == "istanbul":
                         link_element = cols[0].find_element(By.TAG_NAME, "a")
                         link = link_element.get_attribute("href")
 
