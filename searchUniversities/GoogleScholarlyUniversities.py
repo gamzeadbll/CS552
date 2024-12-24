@@ -8,7 +8,7 @@ def extract_university_names(folder_path):
     for filename in os.listdir(folder_path):
         if filename.endswith(".xlsx"):
             # Replace "ÜNİVERSİTESİ" and "Üniversitesi" with "Universityy"
-            name = filename.replace("-kadro.xlsx", "").replace("ÜNİVERSİTESİ", "Universityy").replace("Üniversitesi", "Universityy")
+            name = filename.replace("-kadro.xlsx", "").replace("ÜNİVERSİTESİ", "University").replace("Üniversitesi", "University")
             university_names.append(name)
     return university_names
 
