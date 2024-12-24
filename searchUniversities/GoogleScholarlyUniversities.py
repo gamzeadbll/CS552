@@ -21,14 +21,18 @@ def fetch_author_data(universities):
 
         try:
             while True:
-                # Get the next author
-                author = next(search_query)
-                print(f"Found author: {author['name']}")
-                author_data.append({
-                    "University": university,
-                    "Author Name": author['name'],
-                    "Author URL": author['url_picture']  # URL of the author
-                })
+                try:
+                    # Get the next author
+                    author = next(search_query)
+                    print(f"Found author: {author['name']}")
+                    author_data.append({
+                        "University": university,
+                        "Author Name": author['name'],
+                        "Author URL": "https://scholar.google.com/citations?hl=en&user=" + author['scholar_id']  # URL of the author
+                    })
+                except Exception as e:
+                    print(f"Error processing author: {e}")
+                    continue
         except StopIteration:
             pass
 
@@ -37,20 +41,26 @@ def fetch_author_data(universities):
 
     return author_data
 
-# Main script
 if __name__ == "__main__":
     folder_path = "/Users/gamzeadibelli/OZU DS/CS552/Project/data/data test"
 
-    # Step 1: Extract university names from the folder
-    universities = extract_university_names(folder_path)
+    try:
+        # Step 1: Extract university names from the folder
+        universities = extract_university_names(folder_path)
 
-    # Step 2: Fetch author data from Google Scholar
-    all_author_data = fetch_author_data(universities)
+        # Step 2: Fetch author data from Google Scholar
+        all_author_data = fetch_author_data(universities)
 
-    # Step 3: Save the data to a CSV file
-    df = pd.DataFrame(all_author_data)
-    output_path = folder_path + "/author_data.csv"
-    df.to_csv(output_path, index=False)
-    print(f"Data saved to {output_path}")
-
-
+        # Step 3: Save the data to a CSV file
+        df = pd.DataFrame(all_author_data)
+        output_path = folder_path + "/author_data.csv"
+        df.to_csv(output_path, index=False)
+        print(f"Data saved to {output_path}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        # Save the data collected so far
+        if 'all_author_data' in locals() and all_author_data:
+            df = pd.DataFrame(all_author_data)
+            partial_output_path = folder_path + "/partial_author_data.csv"
+            df.to_csv(partial_output_path, index=False)
+            print(f"Partial data saved to {partial_output_path}")
