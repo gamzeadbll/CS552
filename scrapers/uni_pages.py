@@ -5,6 +5,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from openpyxl import Workbook
 import os
+from scrapers.instructors_page import fetch_instructors
+from utils.helpers import save_instructors_to_excel
 import locale
 
 
@@ -28,7 +30,7 @@ def fetch_university_pages(base_url, driver_path):
         wb = Workbook()
         ws = wb.active
         ws.title = "Universities"
-        ws.append(["University Name", "City","Type","Opening Date "])  # Column header
+        ws.append(["University Name", "Link"])
 
         processed_universities = set()
 
@@ -42,23 +44,49 @@ def fetch_university_pages(base_url, driver_path):
 
             for idx, row in enumerate(rows):
                 cols = row.find_elements(By.TAG_NAME, "td")
-                if len(cols) >= 4:
+                if len(cols) >= 2:
                     university_name = cols[0].text.strip()
-                    formatted_university_name = university_name.replace("ÜNİVERSİTESİ", "University")
                     city = cols[1].text.strip()
                     normalized_city = normalize_turkish(city)
-                    type= cols[2].text.strip()
-                    opening_date = cols[3].text.strip()
 
-                    if formatted_university_name in processed_universities:
+                    if university_name in processed_universities:
                         continue
 
-                    ws.append([formatted_university_name,city,type,opening_date])
-                    print(f"Added: {formatted_university_name} (City: {city})")
-                    processed_universities.add(formatted_university_name)
+                    normalized_start = normalize_turkish("NUH NACİ YAZGAN ÜNİVERSİTESİ")
+                    normalized_name = normalize_turkish(university_name)
+                    if locale.strcoll(normalized_name, normalized_start) < 0:
+                        print(f"Skipping {university_name} (comes before {normalized_start})")
+                        continue
 
-                    all_universities_processed = False
-                    break
+                    if not normalized_city == "istanbul":
+                        link_element = cols[0].find_element(By.TAG_NAME, "a")
+                        link = link_element.get_attribute("href")
+
+                        ws.append([university_name, link])
+                        print(f"Added: {university_name} (City: {city})")
+                        processed_universities.add(university_name)
+                        link_element.click()
+
+                        WebDriverWait(driver, 10).until(
+                            EC.presence_of_element_located((By.ID, "authorlistTb"))
+                        )
+
+                        try:
+                            instructors = fetch_instructors(driver)
+                            save_instructors_to_excel(university_name, instructors)
+                            print(f"Saved instructors for {university_name}.")
+                        except Exception as e:
+                            print(f"Error fetching instructors for {university_name}: {e}")
+
+                        print(f"Returning to the base page...")
+                        driver.get(base_url)
+
+                        WebDriverWait(driver, 10).until(
+                            EC.presence_of_element_located((By.CLASS_NAME, "table-striped"))
+                        )
+
+                        all_universities_processed = False
+                        break
 
             if all_universities_processed:
                 break
