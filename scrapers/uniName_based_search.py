@@ -62,7 +62,6 @@ def scrape_google_scholar_authors(driver_path, university_name):
         sanitized_name = university_name.replace("University", "").strip().replace(" ", "_")
         file_name = f"google_data/{sanitized_name}_authors.xlsx"
 
-        # Load existing workbook if it exists, otherwise create a new one
         if os.path.exists(file_name):
             wb = load_workbook(file_name)
             ws = wb.active
@@ -76,7 +75,7 @@ def scrape_google_scholar_authors(driver_path, university_name):
                 "Number of Publications", "Scholar ID", "Profile Link"
             ])
 
-        page_counter = 0  # Initialize the page counter
+        page_counter = 0
 
         while True:
             authors = driver.find_elements(By.CLASS_NAME, "gs_ai")
@@ -104,7 +103,6 @@ def scrape_google_scholar_authors(driver_path, university_name):
                         ])
                         print(f"Added: {author_details['name']}")
 
-                        # Save workbook after each author
                         wb.save(file_name)
                     else:
                         print(f"Failed to fetch details for Scholar ID: {scholar_id}")
@@ -129,12 +127,11 @@ def scrape_google_scholar_authors(driver_path, university_name):
                     print("The Next button is not clickable (disabled).")
                     break
 
-                # Pause for 5 minutes after every 10 pages
                 if page_counter % 10 == 0:
-                    print("Pausing for 5 minutes after processing 10 pages...")
-                    time.sleep(300)
+                    print("Pausing for 3 minutes after processing 10 pages...")
+                    time.sleep(60)
 
-                # Add a random delay between page loads to mimic human behavior
+
                 time.sleep(random.uniform(10, 30))
             except Exception as e:
                 print(f"No more pages or error encountered: {e}")
